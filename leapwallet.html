@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Leap Wallet + signEthereum </title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"> </script>
+</head>
+
+<body>
+
+    <script>
+
+        const evm_chain_id = '1440000';
+
+        const leap_chain_id = 'xrplevm_1440000-1';
+
+        var evmAddress = '';
+
+        const connectWallet = async () => {
+            if (!window.leap) {
+                alert("Leap Wallet not install!");
+                return;
+            }
+
+            await window.leap.enable(leap_chain_id);
+
+            const key = await window.leap.getKey(leap_chain_id);
+
+            evmAddress = ethers.utils.hexlify(key.address);
+
+        };
+
+        const callContract = async () => 
+        {
+            const abi = [{
+                "type": "function",
+                "name": "transferFrom",
+                "stateMutability": "nonpayable",
+                "inputs": [
+                    {
+                        "name": "sender",
+                        "type": "address"
+                    },
+                    {
+                        "name": "recipient",
+                        "type": "address"
+                    },
+                    {
+                        "name": "amount",
+                        "type": "uint256"
+                    }
+                ],
+                "outputs": [
+                    {
+                        "type": "bool"
+                    }
+                ]
+            }];
+
+            const rpcUrl = 'https://rpc.xrplevm.org/';
+
+            const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+
+            const toAddress = '0x5be02bCFE218f33DD7Fa93EBb5791e925ae7b473';
+
+            const tokenId = 1;
+
+            // transfer .exrp domain
+
+            const contractDomain = new ethers.Contract(
+                '0xc01Df4cc54e67Bb543cB101a77806f77BF34AEF6',
+                abi,
+                provider.getSigner(evmAddress)
+            );
+
+            const data = (await contractDomain.populateTransaction['transferFrom'](evmAddress, toAddress, tokenId)).data;
+
+            const nonce = await provider.getTransactionCount(evmAddress, "latest");
+
+            const gasPrice = await provider.getGasPrice();
+
+            const gasLimit = ethers.BigNumber.from("200000");
+
+            const txData = {
+                gasPrice: "0x" + parseInt(gasPrice).toString(16),
+                gasLimit: ethers.utils.hexlify(gasLimit),
+                nonce: nonce,
+                to: toAddress,
+                chainId: evm_chain_id,
+                data: data,
+                value: 0,
+                type: 0
+            }
+
+            const sigBytes = await window.leap.signEthereum(leap_chain_id, evmAddress, JSON.stringify(txData), "transaction");
+
+            const signature = {
+                r: ethers.utils.hexlify(sigBytes.slice(0, 32)),
+                s: ethers.utils.hexlify(sigBytes.slice(32, 64)),
+                v: sigBytes[64] < 27 ? sigBytes[64] + 27 : sigBytes[64]
+            };
+
+            // Join signature and serialize transaction
+            const signedTx = ethers.utils.serializeTransaction(txData, signature);
+
+            // Broadcast transaction
+            const objTran = await provider.sendTransaction(signedTx);
+        }
+
+        const send = async () => {
+
+            const rpcUrl = 'https://rpc.xrplevm.org/';
+
+            const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+
+            const nonce = await provider.getTransactionCount(evmAddress, "latest");
+
+            const gasPrice = await provider.getGasPrice();
+
+            const gasLimit = ethers.BigNumber.from("200000");
+
+            const toAddress = '0x5be02bCFE218f33DD7Fa93EBb5791e925ae7b473';
+
+            const txData = {
+                gasPrice: "0x" + parseInt(gasPrice).toString(16),
+                gasLimit: ethers.utils.hexlify(gasLimit),
+                nonce: nonce,
+                to: toAddress,
+                chainId: evm_chain_id,
+                data: '0x',
+                value: ethers.utils.parseUnits('1', "ether")._hex,
+                type: 0
+            }
+
+            const sigBytes = await window.leap.signEthereum(leap_chain_id, currentAddress, JSON.stringify(txData), "transaction");
+
+            const signature = {
+                r: ethers.utils.hexlify(sigBytes.slice(0, 32)),
+                s: ethers.utils.hexlify(sigBytes.slice(32, 64)),
+                v: sigBytes[64] < 27 ? sigBytes[64] + 27 : sigBytes[64]
+            };
+
+            // Join signature and serialize transaction
+            const signedTx = ethers.utils.serializeTransaction(txData, signature);
+
+            // Broadcast transaction
+            const objTran = await provider.sendTransaction(signedTx);
+        }
+
+    </script>
+</body>
+
+</html>
