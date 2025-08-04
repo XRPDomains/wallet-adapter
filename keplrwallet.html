@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Keplr Wallet + signEthereum </title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"> </script>
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@3.0.0-rc.5/dist/web3.min.js"></script>
+</head>
+
+<body>
+
+    <script>
+
+        const evm_chain_id = '1440000';
+
+        var evmAddress = '';
+
+        const connectWallet = async () => {
+
+            const provider = window.keplr && window.keplr.ethereum;
+            if (!provider) {
+                return window.open('https://www.keplr.app/')
+            }
+
+            await provider.enable();
+
+            web3 = new Web3(provider);
+
+            evmAddress = await web3.eth.getAccounts();
+
+        };
+
+        const callContract = async () => {
+            const abi = [{
+                "type": "function",
+                "name": "transferFrom",
+                "stateMutability": "nonpayable",
+                "inputs": [
+                    {
+                        "name": "sender",
+                        "type": "address"
+                    },
+                    {
+                        "name": "recipient",
+                        "type": "address"
+                    },
+                    {
+                        "name": "amount",
+                        "type": "uint256"
+                    }
+                ],
+                "outputs": [
+                    {
+                        "type": "bool"
+                    }
+                ]
+            }];
+
+            const toAddress = '0x5be02bCFE218f33DD7Fa93EBb5791e925ae7b473';
+
+            const tokenId = 1;
+
+            // transfer .exrp domain
+            const contractDomain = new web3.eth.Contract(
+                abi,
+                '0xc01Df4cc54e67Bb543cB101a77806f77BF34AEF6'
+            );
+
+            const func = contractDomain.methods.transferFrom(evmAddress, toAddress, tokenId).encodeABI();
+
+            const objTran = await web3.eth.sendTransaction({
+                from: evmAddress,
+                to: '0xc01Df4cc54e67Bb543cB101a77806f77BF34AEF6',
+                value: 0,
+                data: func
+            });
+        }
+
+        const send = async () => {
+
+            const toAddress = '0x5be02bCFE218f33DD7Fa93EBb5791e925ae7b473';
+
+            const objTran = await web3.eth.sendTransaction({
+                from: evmAddress,
+                to: toAddress,
+                value: web3.utils.toWei(1, 'ether'),
+            })
+        }
+
+    </script>
+</body>
+
+</html>
